@@ -6,7 +6,7 @@ import net.minecraft.client.renderer.entity.model.EntityModel;
 import net.minecraft.client.renderer.model.ModelRenderer;
 import net.minecraft.util.math.MathHelper;
 
-public class huggy_wuggy_bd extends EntityModel<HuggyWuggyEntity> {
+public class HuggyWuggyModel extends EntityModel<HuggyWuggyEntity> {
     private final ModelRenderer rote;
     private final ModelRenderer all;
     private final ModelRenderer rightleg8;
@@ -101,7 +101,7 @@ public class huggy_wuggy_bd extends EntityModel<HuggyWuggyEntity> {
     private final ModelRenderer teeth2_r1;
     private final ModelRenderer teeth2_r2;
 
-    public huggy_wuggy_bd() {
+    public HuggyWuggyModel() {
         texWidth = 148;
         texHeight = 148;
 
