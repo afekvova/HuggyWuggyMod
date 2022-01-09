@@ -1,0 +1,70 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "poster": "huggywuggy:item/hw"
+  },
+  "elements": [
+    {
+      "from": [
+        -1,
+        -8,
+        15
+      ],
+      "to": [
+        17,
+        23,
+        16
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0.6432161,
+            15.542857,
+            15.477386,
+            16
+          ],
+          "texture": "#poster"
+        },
+        "down": {
+          "uv": [
+            1.0050251,
+            15.639098,
+            15.718593,
+            16
+          ],
+          "texture": "#poster"
+        },
+        "west": {
+          "uv": [
+            15.155779,
+            0.31278196,
+            15.914572,
+            15.711277
+          ],
+          "texture": "#poster"
+        },
+        "east": {
+          "uv": [
+            15,
+            -7,
+            16,
+            24
+          ],
+          "texture": "#poster"
+        },
+        "north": {
+          "uv": [
+            0,
+            0,
+            15.959799,
+            16
+          ],
+          "texture": "#poster"
+        },
+        "south": {
+          "texture": "#poster"
+        }
+      }
+    }
+  ]
+}
