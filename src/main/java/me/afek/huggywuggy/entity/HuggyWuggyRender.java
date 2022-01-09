@@ -5,11 +5,11 @@ import net.minecraft.client.renderer.entity.EntityRendererManager;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.util.ResourceLocation;
 
-public class HuggyWuggyRender extends MobRenderer<HuggyWuggyEntity, huggy_wuggy_bd> {
+public class HuggyWuggyRender extends MobRenderer<HuggyWuggyEntity, HuggyWuggyModel> {
     private static final ResourceLocation GOLEM_LOCATION = new ResourceLocation(HuggyWuggyMod.MODID, "textures/entity/huggywuggy.png");
 
     public HuggyWuggyRender(EntityRendererManager p_i46133_1_) {
-        super(p_i46133_1_, new huggy_wuggy_bd(), 0.7F);
+        super(p_i46133_1_, new HuggyWuggyModel(), 0.7F);
     }
 
     @Override

@@ -2,6 +2,7 @@ package me.afek.huggywuggy.events;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.afek.huggywuggy.HuggyWuggyMod;
+import me.afek.huggywuggy.TitleRenderer;
 import me.afek.huggywuggy.entity.HuggyWuggyEntity;
 import me.afek.huggywuggy.item.ModItems;
 import me.afek.huggywuggy.packets.PosterCountChangePacket;
@@ -21,6 +22,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
+import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.event.TickEvent;
@@ -37,6 +39,11 @@ public class CommonEventHandler {
 
     Random random = new Random();
     int time = 0;
+    private TitleRenderer titleRenderer;
+
+    public CommonEventHandler(TitleRenderer titleRenderer) {
+        this.titleRenderer = titleRenderer;
+    }
 
     @SubscribeEvent
     public void registerAttributes(EntityAttributeCreationEvent event) {
@@ -44,11 +51,22 @@ public class CommonEventHandler {
     }
 
     @SubscribeEvent
+    public void clientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused())
+            this.titleRenderer.tick();
+    }
+
+    @SubscribeEvent
+    public void writeTitle(RenderGameOverlayEvent.Pre event) {
+        if (!Minecraft.getInstance().options.renderDebug)
+            this.titleRenderer.renderText(event);
+    }
+
+    @SubscribeEvent
     public void writeTextOnScreen(RenderGameOverlayEvent.Post event) {
         FontRenderer fontRenderer = Minecraft.getInstance().font;
-        if (HuggyWuggyMod.isHuggy) return;
 
-        if (HuggyWuggyMod.SCARED >= 250) {
+        if (HuggyWuggyMod.isHuggy) {
             int imageWidth = 400, imageHeight = 400;
             RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
             Minecraft.getInstance().getTextureManager().bind(new ResourceLocation(HuggyWuggyMod.MODID, "textures/picture.png"));
@@ -77,6 +95,7 @@ public class CommonEventHandler {
     public void onPlayerPickUp(PlayerEvent.ItemPickupEvent event) {
         if (event.getStack().getItem() == ModItems.POSTER_ITEM.get() && !HuggyWuggyMod.isHuggy) {
             HuggyWuggyMod.POSTER_COUNT++;
+            HuggyWuggyMod.getInstance().getTitleRenderer().displayTitle(new StringTextComponent("Кто-то нашёл постер!"), new StringTextComponent("Осталось 1 постер"));
             ModidPacketHandler.INSTANCE.send(PacketDistributor.ALL.noArg(), new PosterCountChangePacket(HuggyWuggyMod.POSTER_COUNT));
         }
     }

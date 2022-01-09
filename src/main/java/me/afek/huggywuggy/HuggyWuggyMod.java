@@ -36,8 +36,12 @@ public class HuggyWuggyMod {
     private static final Logger LOGGER = LogManager.getLogger();
     public static int POSTER_COUNT = 0, SCARED;
     public static boolean isHuggy = false;
+    private TitleRenderer titleRenderer;
+    private static HuggyWuggyMod instance;
 
     public HuggyWuggyMod() {
+        instance = this;
+        this.titleRenderer = new TitleRenderer(1, 70, 2, "00FF00", true, 3.0D, 0.0D, -15.0D, true);
 
         IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
         ModItems.register(eventBus);
@@ -53,7 +57,7 @@ public class HuggyWuggyMod {
     }
 
     private void setup(FMLCommonSetupEvent event) {
-        MinecraftForge.EVENT_BUS.register(new CommonEventHandler());
+        MinecraftForge.EVENT_BUS.register(new CommonEventHandler(this.titleRenderer));
         DeferredWorkQueue.runLater(() -> GlobalEntityTypeAttributes.put(ModItems.HUGGY_WUGGY_ENTITY.get(), HuggyWuggyEntity.createAttributes().build()));
     }
 
@@ -63,6 +67,14 @@ public class HuggyWuggyMod {
         RenderTypeLookup.setRenderLayer(ModItems.CANON_BLOCK.get(), RenderType.cutoutMipped());
         RenderingRegistry.registerEntityRenderingHandler(ModItems.POSTER_ENTITY.get(), PaintingRenderer::new);
         RenderingRegistry.registerEntityRenderingHandler(ModItems.HUGGY_WUGGY_ENTITY.get(), HuggyWuggyRender::new);
+    }
+
+    public static HuggyWuggyMod getInstance() {
+        return instance;
+    }
+
+    public TitleRenderer getTitleRenderer() {
+        return titleRenderer;
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event) {
