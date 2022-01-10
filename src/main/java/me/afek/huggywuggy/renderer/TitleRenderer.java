@@ -1,4 +1,4 @@
-package me.afek.huggywuggy;
+package me.afek.huggywuggy.renderer;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -8,6 +8,8 @@ import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.util.ColorHelper;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.ITextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 
 import javax.annotation.Nullable;
@@ -42,6 +44,7 @@ public class TitleRenderer {
         this.isTextCentered = centerText;
     }
 
+    @OnlyIn(Dist.CLIENT)
     public void renderText(RenderGameOverlayEvent.Pre event) {
         if (event.getType() == RenderGameOverlayEvent.ElementType.ALL && this.displayedTitle != null && this.titleTimer > 0) {
             float age = (float) this.titleTimer - event.getPartialTicks();
@@ -124,6 +127,7 @@ public class TitleRenderer {
         }
     }
 
+    @OnlyIn(Dist.CLIENT)
     protected void drawTextBackground(MatrixStack mStack, int yOffset, int width, int color) {
         int textBackgroundColor = Minecraft.getInstance().options.getBackgroundColor(0.0f);
         if (textBackgroundColor != 0) {
