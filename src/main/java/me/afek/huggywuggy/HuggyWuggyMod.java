@@ -5,11 +5,14 @@ import me.afek.huggywuggy.entity.HuggyWuggyRender;
 import me.afek.huggywuggy.events.CommonEventHandler;
 import me.afek.huggywuggy.events.ModidPacketHandler;
 import me.afek.huggywuggy.item.ModItems;
+import me.afek.huggywuggy.renderer.ScareRenderer;
+import me.afek.huggywuggy.renderer.TitleRenderer;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.RenderTypeLookup;
 import net.minecraft.client.renderer.entity.PaintingRenderer;
 import net.minecraft.entity.ai.attributes.GlobalEntityTypeAttributes;
 import net.minecraft.entity.item.PaintingType;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.RegistryEvent;
@@ -37,10 +40,12 @@ public class HuggyWuggyMod {
     public static int POSTER_COUNT = 0, SCARED;
     public static boolean isHuggy = false;
     private TitleRenderer titleRenderer;
+    private ScareRenderer scareRenderer;
     private static HuggyWuggyMod instance;
 
     public HuggyWuggyMod() {
         instance = this;
+        this.scareRenderer = new ScareRenderer(70, new ResourceLocation(HuggyWuggyMod.MODID, "textures/picture.png"));
         this.titleRenderer = new TitleRenderer(1, 70, 2, "00FF00", true, 3.0D, 0.0D, -15.0D, true);
 
         IEventBus eventBus = FMLJavaModLoadingContext.get().getModEventBus();
@@ -57,7 +62,7 @@ public class HuggyWuggyMod {
     }
 
     private void setup(FMLCommonSetupEvent event) {
-        MinecraftForge.EVENT_BUS.register(new CommonEventHandler(this.titleRenderer));
+        MinecraftForge.EVENT_BUS.register(new CommonEventHandler(this.titleRenderer, this.scareRenderer));
         DeferredWorkQueue.runLater(() -> GlobalEntityTypeAttributes.put(ModItems.HUGGY_WUGGY_ENTITY.get(), HuggyWuggyEntity.createAttributes().build()));
     }
 
@@ -75,6 +80,10 @@ public class HuggyWuggyMod {
 
     public TitleRenderer getTitleRenderer() {
         return titleRenderer;
+    }
+
+    public ScareRenderer getScareRenderer() {
+        return scareRenderer;
     }
 
     private void enqueueIMC(final InterModEnqueueEvent event) {

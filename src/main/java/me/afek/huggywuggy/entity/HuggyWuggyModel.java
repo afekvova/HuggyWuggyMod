@@ -647,7 +647,7 @@ public class HuggyWuggyModel extends EntityModel<HuggyWuggyEntity> {
         modelRenderer.yRot = y;
         modelRenderer.zRot = z;
     }
-
+    
     @Override
     public void renderToBuffer(MatrixStack p_225598_1_, IVertexBuilder p_225598_2_, int p_225598_3_, int p_225598_4_, float p_225598_5_, float p_225598_6_, float p_225598_7_, float p_225598_8_) {
         rote.render(p_225598_1_, p_225598_2_, p_225598_3_, p_225598_4_);

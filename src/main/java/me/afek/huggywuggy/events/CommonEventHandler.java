@@ -1,16 +1,15 @@
 package me.afek.huggywuggy.events;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import me.afek.huggywuggy.HuggyWuggyMod;
-import me.afek.huggywuggy.TitleRenderer;
 import me.afek.huggywuggy.entity.HuggyWuggyEntity;
 import me.afek.huggywuggy.item.ModItems;
 import me.afek.huggywuggy.packets.PosterCountChangePacket;
 import me.afek.huggywuggy.packets.ScaredPacket;
+import me.afek.huggywuggy.renderer.ScareRenderer;
+import me.afek.huggywuggy.renderer.TitleRenderer;
 import me.afek.huggywuggy.tileentity.TileEntityLightSource;
-import net.minecraft.block.material.Material;
+import net.minecraft.block.Blocks;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.AbstractGui;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
@@ -19,7 +18,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.BlockRayTraceResult;
 import net.minecraft.util.text.StringTextComponent;
@@ -40,9 +38,11 @@ public class CommonEventHandler {
     Random random = new Random();
     int time = 0;
     private TitleRenderer titleRenderer;
+    private ScareRenderer scareRenderer;
 
-    public CommonEventHandler(TitleRenderer titleRenderer) {
+    public CommonEventHandler(TitleRenderer titleRenderer, ScareRenderer scareRenderer) {
         this.titleRenderer = titleRenderer;
+        this.scareRenderer = scareRenderer;
     }
 
     @SubscribeEvent
@@ -52,30 +52,26 @@ public class CommonEventHandler {
 
     @SubscribeEvent
     public void clientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused())
+        if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused()) {
             this.titleRenderer.tick();
+            this.scareRenderer.tick();
+        }
     }
 
     @SubscribeEvent
     public void writeTitle(RenderGameOverlayEvent.Pre event) {
-        if (!Minecraft.getInstance().options.renderDebug)
+        if (!Minecraft.getInstance().options.renderDebug) {
             this.titleRenderer.renderText(event);
+            this.scareRenderer.renderImage(event);
+        }
     }
 
     @SubscribeEvent
     public void writeTextOnScreen(RenderGameOverlayEvent.Post event) {
         FontRenderer fontRenderer = Minecraft.getInstance().font;
 
-        if (HuggyWuggyMod.isHuggy) {
-            int imageWidth = 400, imageHeight = 400;
-            RenderSystem.color4f(1.0F, 1.0F, 1.0F, 1.0F);
-            Minecraft.getInstance().getTextureManager().bind(new ResourceLocation(HuggyWuggyMod.MODID, "textures/picture.png"));
-            int i = (event.getWindow().getWidth() - imageWidth) / 4;
-            int j = (event.getWindow().getHeight() - imageHeight) / 4;
-            AbstractGui.blit(event.getMatrixStack(), i, j, 0, 0, imageWidth / 2, imageHeight / 2, 256, 256);
-            HuggyWuggyMod.SCARED--;
+        if (HuggyWuggyMod.isHuggy)
             return;
-        }
 
         if (event.getType() == RenderGameOverlayEvent.ElementType.TEXT) {
             if (Minecraft.getInstance().player != null) {
@@ -95,18 +91,26 @@ public class CommonEventHandler {
     public void onPlayerPickUp(PlayerEvent.ItemPickupEvent event) {
         if (event.getStack().getItem() == ModItems.POSTER_ITEM.get() && !HuggyWuggyMod.isHuggy) {
             HuggyWuggyMod.POSTER_COUNT++;
-            HuggyWuggyMod.getInstance().getTitleRenderer().displayTitle(new StringTextComponent("Кто-то нашёл постер!"), new StringTextComponent("Осталось 1 постер"));
+            HuggyWuggyMod.getInstance().getTitleRenderer().displayTitle(new StringTextComponent("Кто-то нашёл постер!"), new StringTextComponent("Осталось " + (20 - HuggyWuggyMod.POSTER_COUNT) + " " + padezh("Постер", "", "а", "", (20 - HuggyWuggyMod.POSTER_COUNT))));
             ModidPacketHandler.INSTANCE.send(PacketDistributor.ALL.noArg(), new PosterCountChangePacket(HuggyWuggyMod.POSTER_COUNT));
         }
+    }
+
+    public String padezh(String ed, String a, String b, String c, int n) {
+        if (n < 0) n = -n;
+        int last = n % 100;
+        if (last > 10 && last < 21) return ed + c;
+        last = n % 10;
+        if (last == 0 || last > 4) return ed + c;
+        if (last == 1) return ed + a;
+        if (last < 5) return ed + b;
+        return ed + c;
     }
 
     @SubscribeEvent
     public void onPlayerInteractEvent(PlayerInteractEvent.RightClickEmpty event) {
         if (!HuggyWuggyMod.isHuggy || event.getEntity() == null) return;
-        if (event.getEntity() instanceof ServerPlayerEntity) {
-            ServerPlayerEntity entity = (ServerPlayerEntity) event.getEntity();
-            ModidPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> entity), new ScaredPacket(false));
-        }
+        ModidPacketHandler.INSTANCE.send(PacketDistributor.ALL.noArg(), new ScaredPacket((int) event.getPlayer().position().x(), (int) event.getPlayer().position().y(), (int) event.getPlayer().position().z()));
     }
 
     @SubscribeEvent
@@ -116,43 +120,26 @@ public class CommonEventHandler {
     }
 
     @SubscribeEvent
-    public void onPlayerInteractEventLeft(PlayerInteractEvent.LeftClickEmpty event) {
-        if (!HuggyWuggyMod.isHuggy) return;
-        PlayerEntity player = event.getPlayer();
-        if (event.getEntity() == null) return;
-        if (event.getEntity() instanceof ServerPlayerEntity) {
-            ServerPlayerEntity entity = (ServerPlayerEntity) event.getEntity();
-            ModidPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> entity), new ScaredPacket(true));
-        }
-    }
-
-    @SubscribeEvent
     public void onPlayerUpdate(TickEvent.PlayerTickEvent event) {
         PlayerEntity player = event.player;
-//        CustomServerBossInfoManager customserverbossinfomanager = player.getServer().getCustomBossEvents();
-//        ResourceLocation resourceLocation = new ResourceLocation("huggywuggy:bossbar", "id");
-//        CustomServerBossInfo customServerBossInfo = customserverbossinfomanager.get(resourceLocation);
-//        ;
-//        if (customServerBossInfo == null)
-//            customServerBossInfo = customserverbossinfomanager.create(resourceLocation, new StringTextComponent("test"));
-//
-//        customServerBossInfo.setMax(100);
-//        customServerBossInfo.setValue(50);
-//        customServerBossInfo.setPlayers((Collection<ServerPlayerEntity>) player);
-
         ItemStack itemStack = player.getItemBySlot(EquipmentSlotType.MAINHAND).getItem() == ModItems.FLASH_LIGHT_ITEM.get() ? player.getItemBySlot(EquipmentSlotType.MAINHAND) : player.getItemBySlot(EquipmentSlotType.OFFHAND);
         if (event.phase == TickEvent.Phase.START && ((player.getItemBySlot(EquipmentSlotType.MAINHAND).getItem() != Items.AIR && player.getItemBySlot(EquipmentSlotType.MAINHAND).getItem() == ModItems.FLASH_LIGHT_ITEM.get() && player.getItemBySlot(EquipmentSlotType.MAINHAND).hasTag() && player.getItemBySlot(EquipmentSlotType.MAINHAND).getTag().getBoolean("active")) || (player.getItemBySlot(EquipmentSlotType.OFFHAND).getItem() != Items.AIR && player.getItemBySlot(EquipmentSlotType.OFFHAND).getItem() == ModItems.FLASH_LIGHT_ITEM.get() && player.getItemBySlot(EquipmentSlotType.OFFHAND).hasTag() && player.getItemBySlot(EquipmentSlotType.OFFHAND).getTag().getBoolean("active")))) {
-            int range = 25;
+            int range = 2;
 
-            createLight(player, range);
-            int lightNumber = range / 5;
-            int lightRange = range;
-            for (int i = 0; i < lightNumber; i++) {
-                lightRange -= 5;
-                createLight(player, lightRange);
+            int cx = (int) player.position().x();
+            int cy = (int) player.position().y();
+            int cz = (int) player.position().z();
+            int rSquared = range * range;
+            for (int x = cx - range; x <= cx + range; x++) {
+                for (int z = cz - range; z <= cz + range; z++) {
+                    if ((cx - x) * (cx - x) + (cz - z) * (cz - z) <= rSquared) {
+                        if (player.level.getBlockState(new BlockPos(x, cy, z)).getBlock() == Blocks.AIR)
+                            createLight(player, new BlockPos(x, cy, z));
+                    }
+                }
             }
 
-            if (time >= random.nextInt(1200 - 350) + 350) {
+            if (time >= random.nextInt(700 - 100) + 100) {
                 CompoundNBT nbt = itemStack.getOrCreateTag();
                 int charge = nbt.contains("charge") ? nbt.getInt("charge") : 100;
                 nbt.putInt("charge", --charge);
@@ -168,51 +155,11 @@ public class CommonEventHandler {
         return ((BlockRayTraceResult) player.pick(rangeL, 0.0F, false)).getBlockPos();
     }
 
-    private void createLight(PlayerEntity player, int lookingRange) {
+    private void createLight(PlayerEntity player, BlockPos blockPos) {
         World world = player.level;
-        TileEntity tile = null;
-        int x = lookingAt(player, lookingRange).getX();
-        int y = lookingAt(player, lookingRange).getY();
-        int z = lookingAt(player, lookingRange).getZ();
-        boolean createLight = false;
-        for (int i = 0; i < 5; i++) {
-            tile = world.getBlockEntity(new BlockPos(x, y, z));
-            if (tile instanceof TileEntityLightSource) {
-                createLight = true;
-                break;
-            }
-            if (world.getBlockState(new BlockPos(x, y, z)).getMaterial() != Material.AIR) {
-                int pX = (int) (player.getPosition(0)).x;
-                int pY = (int) (player.getPosition(0)).y;
-                int pZ = (int) (player.getPosition(0)).z;
-                if (pX > x) {
-                    x++;
-                } else if (pX < x) {
-                    x--;
-                }
-                if (pY > y) {
-                    y++;
-                } else if (pY < y) {
-                    y--;
-                }
-                if (pZ > z) {
-                    z++;
-                } else if (pZ < z) {
-                    z--;
-                }
-            }
-            if (world.getBlockState(new BlockPos(x, y, z)).getMaterial() == Material.AIR) {
-                createLight = true;
-                break;
-            }
-        }
-        if (createLight) {
-            tile = world.getBlockEntity(new BlockPos(x, y, z));
-            if (tile instanceof TileEntityLightSource) {
-                ((TileEntityLightSource) tile).ticksExisted = 0;
-            } else if (world.getBlockState(new BlockPos(x, y, z)).getBlock() != ModItems.LIGHT_SOURCE_BLOCK.get()) {
-                world.setBlock(new BlockPos(x, y, z), ModItems.LIGHT_SOURCE_BLOCK.get().defaultBlockState(), 1);
-            }
+        TileEntity tile = world.getBlockEntity(blockPos);
+        if (!(tile instanceof TileEntityLightSource) && world.getBlockState(blockPos).getBlock() != ModItems.LIGHT_SOURCE_BLOCK.get()) {
+            world.setBlock(blockPos, ModItems.LIGHT_SOURCE_BLOCK.get().defaultBlockState(), 1);
         }
     }
 }
